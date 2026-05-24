@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Wise — Cross‑Device / Consent Grouping Demo (Single Banner)</title>
+
+  <!--
+    Wise Cross‑Device / Consent Grouping Demo
+    ─────────────────────────────────────────
+    Goals (aligned to OT Kicks pattern):
+      • Persist login via cookie (otEmail) so identity is available on every load.
+      • Set OneTrust.dataSubjectParams BEFORE loading otSDKStub.js.
+      • Load ONLY ONE banner (single data-domain-script).
+      • Provide console/network monitors to verify cross-device sync calls.
+
+    Notes:
+      • This is a DEMO. Client-side HS256 secret is not secure for production.
+      • If your tenant requires API-key auth to consent-api.onetrust.com, a browser-only static site
+        may hit CORS constraints. In that case you need a server-side proxy.
+  -->
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- BLOCK 1 (sync): Config, cookie helpers, OptanonWrapper         -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <script>
+    // ── Single Domain Script (ONLY ONE banner) ─────────────────────
+    // Use your desired DS here. If your non-test DS returns 404 in your environment,
+    // you can override via URL: ?ds=<domainScriptId>
+    var OT_DOMAIN_ID_DEFAULT = '019e40f8-da69-71f3-a641-fa46b761122c';
+    var _url = new URL(window.location.href);
+    var _dsOverride = (_url.searchParams.get('ds') || '').trim();
+    var OT_DOMAIN_ID = _dsOverride || OT_DOMAIN_ID_DEFAULT;
+
+    // OneTrust stub URL format
+    var OT_STUB_URL = 'https://cdn.cookielaw.org/consent/' + OT_DOMAIN_ID + '/otSDKStub.js';
+
+    // ── DEMO HS256 secret (must match the HS256 key configured in OneTrust Public Keys) ──
+    // Production: generate JWT server-side.
+    var DEMO_HS256_SECRET = 'wise-demo-secret-for-onetrust-jwt-2026';
+
+    // ── Cookie helpers (OT Kicks-style persistence) ────────────────
+    function setCookie(name, value, maxAgeSeconds) {
+      var encoded = encodeURIComponent(value);
+      var parts = [name + '=' + encoded, 'path=/', 'SameSite=Lax'];
+      if (typeof maxAgeSeconds === 'number') parts.push('max-age=' + maxAgeSeconds);
+      document.cookie = parts.join('; ');
+    }
+
+    function getCookie(name) {
+      var match = document.cookie.match(new RegExp('(^|; )' + name.replace(/([.$?*|{}()\[\]\\\/\+^])/g, '\\$1') + '=([^;]*)'));
+      return match ? decodeURIComponent(match[2]) : '';
+    }
+
+    function clearCookie(name) {
+      document.cookie = name + '=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
+    }
+
+    // ── Resolve user identifier ────────────────────────────────────
+    // Priority:
+    //   1) ?user= query param (from login screen)
+    //   2) otEmail cookie
+    // When found in query param, we persist it into cookie for future loads.
+    var _userFromQuery = (_url.searchParams.get('user') || '').trim();
+    var _userFromCookie = (getCookie('otEmail') || '').trim();
+
+    if (_userFromQuery) {
+      setCookie('otEmail', _userFromQuery, 60 * 60); // 1 hour
+    }
+
+    var OT_USER_ID = (_userFromQuery || _userFromCookie || '').trim();
+    var OT_IS_LOGGED_IN = OT_USER_ID.length > 0;
+
+    // ── OptanonWrapper: called by OneTrust on load / consent changes ──
+    function OptanonWrapper() {
+      console.log('[OT] OptanonWrapper fired. ActiveGroups:', window.OnetrustActiveGroups);
+      if (typeof applyConsentState === 'function') applyConsentState();
+    }
+
+    // ── Environment warning (file://) ──────────────────────────────
+    if (window.location.protocol === 'file:') {
+      console.warn('[ENV] Running from file://. Some browsers treat file origins as unique and this can break storage/iframes. Serve via http(s) for reliable results.');
+    }
+  </script>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- BLOCK 2 (async): JWT → dataSubjectParams → THEN load stub      -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <script>
+    // Base64url helpers
+    function _b64url(bytes) {
+      return btoa(String.fromCharCode.apply(null, new Uint8Array(bytes)))
+        .replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+    }
+
+    async function _hmac256(secret, data) {
+      var enc = new TextEncoder();
+      var key = await crypto.subtle.importKey(
+        'raw', enc.encode(secret),
+        { name: 'HMAC', hash: 'SHA-256' },
+        false,
+        ['sign']
+      );
+      return new Uint8Array(await crypto.subtle.sign('HMAC', key, enc.encode(data)));
+    }
+
+    async function createJwtHS256(userId) {
+      var enc = new TextEncoder();
+      var header = _b64url(enc.encode(JSON.stringify({ alg: 'HS256', typ: 'JWT' })));
+      // Keep payload minimal: sub is the key identity field.
+      var now = Math.floor(Date.now() / 1000);
+      var payload = _b64url(enc.encode(JSON.stringify({ sub: userId, iat: now, exp: now + 3600 })));
+      var sig = _b64url(await _hmac256(DEMO_HS256_SECRET, header + '.' + payload));
+      return header + '.' + payload + '.' + sig;
+    }
+
+    function injectOneTrustStub() {
+      var old = document.getElementById('ot-sdk-stub');
+      if (old) old.remove();
+
+      var s = document.createElement('script');
+      s.id = 'ot-sdk-stub';
+      s.src = OT_STUB_URL;
+      s.type = 'text/javascript';
+      s.charset = 'UTF-8';
+      s.setAttribute('data-domain-script', OT_DOMAIN_ID);
+
+      s.addEventListener('load', function () {
+        console.log('[OT] Stub loaded:', OT_STUB_URL);
+      });
+
+      s.addEventListener('error', function () {
+        console.error('[OT] FAILED to load stub:', OT_STUB_URL);
+      });
+
+      document.head.appendChild(s);
+      console.log('[OT] Stub injected:', OT_STUB_URL);
+      console.log('[OT] data-domain-script:', OT_DOMAIN_ID);
+    }
+
+    (async function bootstrapIdentityThenLoadOT() {
+      window.__WISE_XDCD__ = {
+        domainScript: OT_DOMAIN_ID,
+        stubUrl: OT_STUB_URL,
+        user: OT_USER_ID,
+        isLoggedIn: OT_IS_LOGGED_IN,
+        jwt: null
+      };
+
+      if (OT_IS_LOGGED_IN) {
+        try {
+          var jwt = await createJwtHS256(OT_USER_ID);
+          window.__WISE_XDCD__.jwt = jwt;
+
+          // IMPORTANT: dataSubjectParams MUST exist BEFORE the stub loads
+          window.OneTrust = window.OneTrust || {};
+          window.OneTrust.dataSubjectParams = {
+            id: OT_USER_ID,
+            isAnonymous: false,
+            token: jwt
+          };
+
+          console.log('[XDCD] dataSubjectParams set for:', OT_USER_ID);
+          console.log('[XDCD] JWT:', jwt);
+        } catch (e) {
+          console.error('[XDCD] Failed to create JWT:', e && e.message ? e.message : e);
+        }
+      } else {
+        console.log('[XDCD] No user logged in — anonymous mode (no dataSubjectParams).');
+      }
+
+      injectOneTrustStub();
+    })();
+  </script>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- BLOCK 3: Network monitors (syncgroup + preferences diagnostics) -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <script>
+    (function consentApiMonitors(){
+      var host = 'consent-api.onetrust.com';
+      var syncMarker = 'syncgroup=';
+
+      // PerformanceObserver: shows network calls including syncgroup
+      if (typeof PerformanceObserver !== 'undefined') {
+        try {
+          var obs = new PerformanceObserver(function(list){
+            list.getEntries().forEach(function(e){
+              if (!e.name) return;
+              if (e.name.indexOf(host) !== -1 && e.name.indexOf(syncMarker) !== -1) {
+                console.log('%c[XDCD SYNC DETECTED] ' + e.name, 'color:#27ae60;font-weight:800;');
+              }
+            });
+          });
+          obs.observe({ type: 'resource', buffered: true });
+          console.log('[XDCD] Monitoring for syncgroup calls:', host + '/...?' + syncMarker);
+        } catch (e) {
+          console.warn('[XDCD] PerformanceObserver failed:', e && e.message);
+        }
+      }
+
+      // Fetch wrapper: log status for consent-api calls (helps diagnose 401/403)
+      try {
+        var _fetch = window.fetch;
+        if (_fetch) {
+          window.fetch = async function(input, init){
+            var url = (typeof input === 'string') ? input : (input && input.url);
+            var res = await _fetch.apply(this, arguments);
+            try {
+              if (url && url.indexOf(host) !== -1) {
+                console.log('[CONSENT API fetch]', res.status, url);
+                if (res.status === 401) {
+                  console.warn('[CONSENT API] 401 Unauthorized. If your tenant requires API-key auth, a static browser site may need a server-side proxy due to CORS.');
+                }
+              }
+            } catch(_) {}
+            return res;
+          };
+        }
+      } catch(e) {}
+
+      // XHR wrapper: log errors for consent-api calls
+      try {
+        var _open = XMLHttpRequest.prototype.open;
+        XMLHttpRequest.prototype.open = function(method, url){
+          this.__wise_consent_api__ = (url && url.toString().indexOf(host) !== -1);
+          this.__wise_url__ = url;
+          return _open.apply(this, arguments);
+        };
+        var _send = XMLHttpRequest.prototype.send;
+        XMLHttpRequest.prototype.send = function(body){
+          if (this.__wise_consent_api__) {
+            this.addEventListener('load', function(){
+              console.log('[CONSENT API XHR]', this.status, this.__wise_url__);
+              if (this.status === 401) {
+                console.warn('[CONSENT API] 401 Unauthorized. If you require API key auth, use a proxy (Cloudflare Worker) to avoid CORS.');
+              }
+            }.bind(this));
+            this.addEventListener('error', function(){
+              console.error('[CONSENT API XHR] Network error (possible CORS).', this.__wise_url__);
+            }.bind(this));
+          }
+          return _send.apply(this, arguments);
+        };
+      } catch(e) {}
+    })();
+  </script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      height: 100%;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: #f2f5f7;
+      color: #163300;
+    }
+
+    .top-bar {
+      display:flex; align-items:center; justify-content:space-between;
+      padding: 16px 24px;
+      background:#fff;
+      border-bottom: 3px solid #9fe870;
+      position: sticky; top: 0; z-index: 100;
+    }
+    .wise-logo img { height: 26px; width:auto; display:block; }
+
+    .main-wrapper { display:flex; justify-content:center; padding: 48px 16px 80px; }
+    .card { width:100%; max-width: 520px; background:#fff; border-radius: 16px; padding: 24px; box-shadow: 0 10px 30px rgba(16,24,40,.08); }
+    h1 { font-size: 28px; margin-bottom: 6px; }
+    p.muted { color:#5d7079; margin-bottom: 18px; }
+
+    label { display:block; font-weight:700; font-size: 14px; margin-bottom: 6px; }
+    input[type="email"] {
+      width:100%; padding: 14px 16px; font-size: 16px;
+      border: 2px solid #d5d9dc; border-radius: 10px; outline:none;
+    }
+    input:focus { border-color:#163300; }
+
+    .btn {
+      width:100%; padding: 14px 16px; border:none; border-radius: 999px;
+      font-weight:800; cursor:pointer; margin-top: 12px;
+      background:#9fe870; color:#163300;
+    }
+    .btn.secondary { background:#163300; color:#fff; }
+
+    .row { display:flex; gap: 10px; margin-top: 12px; }
+    .row .btn { width: auto; flex: 1; }
+
+    .pill {
+      display:inline-flex; align-items:center; gap:8px;
+      padding: 8px 12px; border-radius: 999px;
+      background:#f2f5f7; color:#163300; font-weight:700;
+      margin-top: 14px;
+    }
+
+    .hidden { display:none; }
+
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 12px; }
+
+    .footer-chip {
+      position: fixed; right: 16px; bottom: 16px; z-index: 200;
+      display:flex; align-items:center; gap:10px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.94);
+      border: 1px solid #d5d9dc;
+      box-shadow: 0 12px 28px rgba(16,24,40,.12);
+      color:#163300;
+    }
+    .footer-chip button {
+      border:none; border-radius:999px; padding: 8px 10px;
+      background:#163300; color:#fff; font-weight:800; cursor:pointer;
+    }
+
+    #onetrust-banner-sdk, #onetrust-consent-sdk { z-index: 2147483647 !important; }
+  </style>
+</head>
+
+<body>
+  <div class="top-bar">
+    <div class="wise-logo">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e8/Wise_Logo_512x124.svg/1280px-Wise_Logo_512x124.svg.png" alt="Wise" />
+    </div>
+    <div class="mono" id="dsLabel"></div>
+  </div>
+
+  <!-- LOGIN VIEW -->
+  <div class="main-wrapper" id="loginView">
+    <div class="card">
+      <h1>Welcome back</h1>
+      <p class="muted">Sign in to link consent to your profile ID and test cross-device sync.</p>
+
+      <form id="loginForm">
+        <label for="email">Email</label>
+        <input type="email" id="email" placeholder="e.g. alvaro@wise.com" required />
+        <button class="btn" type="submit">Log in</button>
+      </form>
+
+      <div class="pill mono" id="loginHint"></div>
+    </div>
+  </div>
+
+  <!-- DASHBOARD VIEW -->
+  <div class="main-wrapper hidden" id="dashView">
+    <div class="card">
+      <h1>Dashboard</h1>
+      <p class="muted">Identity and consent status</p>
+
+      <div class="pill mono" id="identityLine"></div>
+      <div class="pill mono" id="activeGroupsLine" style="margin-top:10px;"></div>
+
+      <div class="row">
+        <button class="btn secondary" id="openPrefsBtn" type="button">Cookie Preferences</button>
+        <button class="btn" id="logoutBtn" type="button">Log out</button>
+      </div>
+
+      <p class="muted" style="margin-top:14px;">
+        Open DevTools → Network and verify sync calls containing <span class="mono">syncgroup=</span>.
+      </p>
+    </div>
+  </div>
+
+  <div class="footer-chip">
+    <span class="mono" id="chipMeta"></span>
+    <button type="button" id="chipPrefsBtn">Preferences</button>
+  </div>
+
+  <script>
+    // ── UI wiring ─────────────────────────────────────────────────
+    var dsLabel = document.getElementById('dsLabel');
+    var loginView = document.getElementById('loginView');
+    var dashView = document.getElementById('dashView');
+    var loginHint = document.getElementById('loginHint');
+    var identityLine = document.getElementById('identityLine');
+    var activeGroupsLine = document.getElementById('activeGroupsLine');
+    var chipMeta = document.getElementById('chipMeta');
+
+    dsLabel.textContent = 'DS: ' + OT_DOMAIN_ID;
+    chipMeta.textContent = (OT_IS_LOGGED_IN ? ('User: ' + OT_USER_ID) : 'Anonymous') + ' | DS: ' + OT_DOMAIN_ID;
+
+    if (OT_IS_LOGGED_IN) {
+      loginView.classList.add('hidden');
+      dashView.classList.remove('hidden');
+      identityLine.textContent = 'Profile ID: ' + OT_USER_ID;
+      activeGroupsLine.textContent = 'ActiveGroups: ' + (window.OnetrustActiveGroups || '(waiting...)');
+    } else {
+      loginView.classList.remove('hidden');
+      dashView.classList.add('hidden');
+      loginHint.textContent = 'Tip: you can also pass ?user=email@example.com';
+    }
+
+    // Login: preserve query params; set user; reload
+    document.getElementById('loginForm').addEventListener('submit', function(e){
+      e.preventDefault();
+      var email = document.getElementById('email').value.trim();
+      if (!email) return;
+      var u = new URL(window.location.href);
+      u.searchParams.set('user', email);
+      // Keep ds override if present
+      window.location.href = u.toString();
+    });
+
+    // Logout: clear cookie & param; reload
+    function doLogout(){
+      clearCookie('otEmail');
+      var u = new URL(window.location.href);
+      u.searchParams.delete('user');
+      window.location.href = u.toString();
+    }
+
+    document.getElementById('logoutBtn').addEventListener('click', doLogout);
+
+    // Preferences open
+    function openPrefs(){
+      if (typeof Optanon !== 'undefined' && typeof Optanon.ToggleInfoDisplay === 'function') Optanon.ToggleInfoDisplay();
+      else if (window.OneTrust && typeof window.OneTrust.ToggleInfoDisplay === 'function') window.OneTrust.ToggleInfoDisplay();
+      else alert('Cookie preference center is not ready yet.');
+    }
+
+    document.getElementById('openPrefsBtn').addEventListener('click', openPrefs);
+    document.getElementById('chipPrefsBtn').addEventListener('click', openPrefs);
+
+    // Keep active groups label fresh
+    setInterval(function(){
+      if (!OT_IS_LOGGED_IN) return;
+      activeGroupsLine.textContent = 'ActiveGroups: ' + (window.OnetrustActiveGroups || '(waiting...)');
+    }, 1000);
+
+    // ── Demo: consent-driven behavior hooks (optional) ─────────────
+    function applyConsentState(){
+      // Example: add your script gating logic here using window.OnetrustActiveGroups
+      // e.g., enable analytics when groups includes C0002.
+    }
+  </script>
+</body>
+</html>
