@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ShopVibe</title>
+<link rel="icon" type="image/x-icon" href="favicon2.ico">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#faf5ff;color:#1e293b}
+.topbar{background:#9333ea;color:#fff;padding:16px 24px;display:flex;align-items:center;justify-content:space-between}
+.topbar h1{font-size:20px}.topbar .tag{font-size:11px;opacity:.7}
+.wrap{max-width:860px;margin:24px auto;padding:0 16px}
+.card{background:#fff;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,.08);padding:20px;margin-bottom:20px}
+.card h2{font-size:15px;margin-bottom:10px;color:#9333ea}
+iframe{width:100%;max-width:480px;aspect-ratio:16/9;border:0;border-radius:8px;display:block;margin-bottom:12px}
+.status-box{background:#0f172a;color:#e2e8f0;padding:14px;border-radius:8px;font-size:12px;font-family:monospace;overflow:auto;max-height:200px;white-space:pre-wrap}
+.badge{display:inline-block;padding:3px 8px;border-radius:12px;font-size:11px;font-weight:600;color:#fff;margin:2px 4px 2px 0}
+.active{background:#16a34a}.blocked{background:#dc2626}
+#userInfo{font-weight:700;color:#9333ea}
+.product-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:12px}
+.product{background:#faf5ff;border:1px solid #e9d5ff;border-radius:8px;padding:14px;text-align:center;font-size:13px}
+.product .price{color:#9333ea;font-weight:700;font-size:16px;margin-top:4px}
+.btn-row{margin-top:12px}
+#ot-sdk-btn.ot-sdk-show-settings{padding:10px 18px !important;border-radius:8px !important;font-weight:600 !important}
+</style>
+
+<!-- ============================================================
+     OneTrust Setup — EXACT same pattern as Cross_Domain_Demo.html
+     ============================================================ -->
+<script>
+function getUserFromURL() {
+  const params = new URLSearchParams(window.location.search);
+  return params.get('user') || 'johndoe2@onetrust.com';
+}
+var dynamicUser = getUserFromURL();
+var OneTrust = {
+  dataSubjectParams: {
+    id: dynamicUser,
+    isAnonymous: false,
+    token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqb2huZG9lMkBvbmV0cnVzdC5jb20ifQ.iCWg9LI3_XGsRoxaNjhSjRTPyE9NVB_9I2DziPkTPvs'
+  }
+};
+</script>
+<script src="https://cdn.cookielaw.org/consent/019e40f8-da69-71f3-a641-fa46b761122c-test/OtAutoBlock.js"></script>
+<script src="https://cdn.cookielaw.org/consent/019e40f8-da69-71f3-a641-fa46b761122c-test/otSDKStub.js" data-domain-script="019e40f8-da69-71f3-a641-fa46b761122c-test"></script>
+<script type="text/javascript">
+function OptanonWrapper() { updateUI(); }
+</script>
+
+</head>
+<body>
+
+<div class="topbar">
+  <div>
+    <h1>🛍️ ShopVibe</h1>
+    <div class="tag">Cross-Domain Demo Site 2 — E-Commerce &amp; Lifestyle</div>
+  </div>
+  <div style="font-size:12px;opacity:.8">User: <span id="userInfo"></span></div>
+</div>
+
+<div class="wrap">
+
+  <!-- Products -->
+  <div class="card">
+    <h2>🔥 Trending Products</h2>
+    <p style="font-size:14px;color:#475569;margin-bottom:12px">Discover the latest picks curated by our team.</p>
+    <div class="product-grid">
+      <div class="product">🎧 Wireless Headphones<div class="price">€129.99</div></div>
+      <div class="product">⌚ Smart Watch Pro<div class="price">€249.00</div></div>
+      <div class="product">📱 Phone Case Ultra<div class="price">€39.99</div></div>
+      <div class="product">💻 Laptop Stand<div class="price">€59.99</div></div>
+      <div class="product">🔌 USB-C Hub 7-in-1<div class="price">€44.99</div></div>
+      <div class="product">🎒 Travel Backpack<div class="price">€89.00</div></div>
+    </div>
+  </div>
+
+  <!-- Video -->
+  <div class="card">
+    <h2>🎬 Product Spotlight</h2>
+    <iframe src="https://player.vimeo.com/video/76979871" title="Vimeo" allow="autoplay;fullscreen;picture-in-picture" allowfullscreen></iframe>
+  </div>
+
+  <!-- Spotify -->
+  <div class="card">
+    <h2>🎵 Store Vibes Playlist</h2>
+    <iframe style="border-radius:12px;max-width:100%;height:152px" src="https://open.spotify.com/embed/playlist/37i9dQZF1DXcBWIGoYBM5M?utm_source=generator" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+  </div>
+
+  <!-- Cookie Settings -->
+  <div class="card">
+    <h2>⚙️ Privacy Controls</h2>
+    <div class="btn-row">
+      <button id="ot-sdk-btn" class="ot-sdk-show-settings">Cookie Settings</button>
+    </div>
+  </div>
+
+  <!-- Consent Status -->
+  <div class="card">
+    <h2>🛡️ Consent Status</h2>
+    <div class="status-box">
+      <div id="groups"></div>
+      <hr style="border-color:#334155;margin:8px 0">
+      <div id="cookies"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ============================================================
+     Tracking Technologies (scannable by OneTrust)
+     type="text/plain" + optanon-category → AutoBlock manages
+     ============================================================ -->
+
+<!-- Matomo/Piwik Analytics — C0002 Performance -->
+<script type="text/plain" class="optanon-category-C0002">
+  var _paq = window._paq = window._paq || [];
+  _paq.push(['trackPageView']);
+  _paq.push(['enableLinkTracking']);
+  (function() {
+    var u="https://analytics.example.com/";
+    _paq.push(['setTrackerUrl', u+'matomo.php']);
+    _paq.push(['setSiteId', '1']);
+    var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0];
+    g.async=true; g.src=u+'matomo.js'; s.parentNode.insertBefore(g,s);
+  })();
+  console.log('[ShopVibe] Matomo Analytics loaded ✔');
+</script>
+
+<!-- Google Ads Conversion — C0004 Targeting -->
+<script type="text/plain" class="optanon-category-C0004" src="https://www.googletagmanager.com/gtag/js?id=AW-000000000"></script>
+<script type="text/plain" class="optanon-category-C0004">
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'AW-000000000');
+  console.log('[ShopVibe] Google Ads loaded ✔');
+</script>
+
+<!-- LinkedIn Insight Tag — C0005 Social Media -->
+<script type="text/plain" class="optanon-category-C0005">
+  _linkedin_partner_id = "0000000";
+  window._linkedin_data_partner_ids = window._linkedin_data_partner_ids || [];
+  window._linkedin_data_partner_ids.push(_linkedin_partner_id);
+  (function(l) {
+    if (!l){window.lintrk = function(a,b){window.lintrk.q.push([a,b])};
+    window.lintrk.q=[]}
+    var s = document.getElementsByTagName("script")[0];
+    var b = document.createElement("script");
+    b.type = "text/javascript";b.async = true;
+    b.src = "https://snap.licdn.com/li.lms-analytics/insight.min.js";
+    s.parentNode.insertBefore(b, s);})(window.lintrk);
+  console.log('[ShopVibe] LinkedIn Insight loaded ✔');
+</script>
+
+<!-- Twitter/X Pixel — C0005 Social Media -->
+<script type="text/plain" class="optanon-category-C0005">
+  !function(e,t,n,s,u,a){e.twq||(s=e.twq=function(){s.exe?s.exe.apply(s,arguments):s.queue.push(arguments);
+  },s.version='1.1',s.queue=[],u=t.createElement(n),u.async=!0,u.src='https://static.ads-twitter.com/uwt.js',
+  a=t.getElementsByTagName(n)[0],a.parentNode.insertBefore(u,a))}(window,document,'script');
+  twq('config','00000');
+  console.log('[ShopVibe] Twitter/X Pixel loaded ✔');
+</script>
+
+<!-- Pinterest Tag — C0005 Social Media -->
+<script type="text/plain" class="optanon-category-C0005">
+  !function(e){if(!window.pintrk){window.pintrk = function () {
+  window.pintrk.queue.push(Array.prototype.slice.call(arguments))};var
+  n=window.pintrk;n.queue=[],n.version="3.0";var
+  t=document.createElement("script");t.async=!0,t.src=e;var
+  r=document.getElementsByTagName("script")[0];
+  r.parentNode.insertBefore(t,r)}}("https://s.pinimg.com/ct/core.js");
+  pintrk('load', '0000000000000', {em: '<user email>'});
+  pintrk('page');
+  console.log('[ShopVibe] Pinterest Tag loaded ✔');
+</script>
+
+<!-- ============================================================
+     UI Logic
+     ============================================================ -->
+<script>
+// Set first-party cookies (scannable)
+document.cookie = '_shopvibe_cart=svc_' + Math.random().toString(36).substr(2,12) + '; path=/; SameSite=Lax';
+document.cookie = '_sv_wishlist=svw_' + Math.random().toString(36).substr(2,10) + '; path=/; SameSite=Lax';
+document.cookie = '_sv_recently_viewed=headphones%2Cwatch%2Cbackpack; path=/; SameSite=Lax';
+
+document.getElementById("userInfo").innerText = dynamicUser;
+
+function getCookies() {
+  return document.cookie.split(';').map(c => c.trim()).filter(Boolean);
+}
+
+function updateUI() {
+  let activeGroups = window.OnetrustActiveGroups || '';
+  let groupsDiv = document.getElementById("groups");
+  groupsDiv.innerHTML = "<b>Active Consent Groups:</b><br>";
+  if (activeGroups) {
+    activeGroups.split(',').filter(Boolean).forEach(g => {
+      groupsDiv.innerHTML += '<span class="badge active">' + g + '</span>';
+    });
+  } else {
+    groupsDiv.innerHTML += "No consent yet";
+  }
+
+  let cookies = getCookies();
+  let cookiesDiv = document.getElementById("cookies");
+  cookiesDiv.innerHTML = "<b>Browser Cookies (" + cookies.length + "):</b><br>";
+  cookies.forEach(c => {
+    cookiesDiv.innerHTML += '<div>' + c + '</div>';
+  });
+}
+
+window.addEventListener("OneTrustGroupsUpdated", function() { updateUI(); });
+window.addEventListener("DOMContentLoaded", function() { updateUI(); });
+</script>
+
+</body>
+</html>
