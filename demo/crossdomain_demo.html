@@ -79,7 +79,7 @@ console.log('[XDCD-INIT] user = ' + (__xdcd_userID || '(empty)'));
 console.log('[XDCD-INIT] jwt  = ' + (__xdcd_jwt ? __xdcd_jwt.substr(0,40) + '…' : '(empty)'));
 
 /* ✅ TOP-LEVEL var → automatically becomes window.OneTrust */
-var OneTrust = {
+window.OneTrust = {
   dataSubjectParams: {
     id          : __xdcd_userID,
     isAnonymous : false,
