@@ -91,7 +91,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Ar
 
   if(userID && jwt){
     /* ---- SET dataSubjectParams BEFORE OneTrust static tags ---- */
-    var OneTrust = {
+    window.OneTrust = {
       dataSubjectParams: {
         id          : userID,
         isAnonymous : false,
