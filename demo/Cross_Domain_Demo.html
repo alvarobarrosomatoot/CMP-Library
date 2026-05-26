@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name='viewport' content='width=device-width, initial-scale=1'>
+<link rel="icon" type="image/x-icon" href="favicon2.ico">
+
+<style>
+body {
+  font-family: Arial, sans-serif;
+  background:#f5f7fb;
+  margin:0;
+  padding:20px;
+  display:flex;
+  justify-content:center;
+}
+
+.container {
+  max-width:900px;
+  width:100%;
+  background:white;
+  padding:20px;
+  border-radius:12px;
+  box-shadow:0 10px 30px rgba(0,0,0,0.1);
+}
+
+h1 {
+  margin-top:0;
+}
+
+iframe {
+  width:100%;
+  max-width:500px;
+  border-radius:8px;
+}
+
+.section {
+  margin-top:20px;
+}
+
+.status-box {
+  background:#0f172a;
+  color:#e2e8f0;
+  padding:15px;
+  border-radius:8px;
+  font-size:12px;
+  overflow:auto;
+}
+
+.badge {
+  display:inline-block;
+  padding:4px 8px;
+  border-radius:6px;
+  margin-right:6px;
+  font-size:12px;
+}
+
+.active { background:#16a34a; }
+.blocked { background:#dc2626; }
+
+#userInfo {
+  font-weight:bold;
+  color:#1e40af;
+}
+</style>
+
+<script>
+// ✅ 1. Obtener user desde URL
+function getUserFromURL() {
+  const params = new URLSearchParams(window.location.search);
+  return params.get('user') || 'johndoe2@onetrust.com';
+}
+
+var dynamicUser = getUserFromURL();
+
+// ✅ 2. Mantener TU lógica intacta pero dinámico
+var OneTrust = {
+  dataSubjectParams: {
+    id: dynamicUser,
+    isAnonymous: false,
+    token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqb2huZG9lMkBvbmV0cnVzdC5jb20ifQ.iCWg9LI3_XGsRoxaNjhSjRTPyE9NVB_9I2DziPkTPvs'
+  }
+};
+</script>
+
+<!-- OneTrust Scripts (SIN CAMBIAR) -->
+<script src="https://cdn.cookielaw.org/consent/019e40f8-da69-71f3-a641-fa46b761122c-test/OtAutoBlock.js"></script>
+<script src="https://cdn.cookielaw.org/consent/019e40f8-da69-71f3-a641-fa46b761122c-test/otSDKStub.js" data-domain-script="019e40f8-da69-71f3-a641-fa46b761122c-test"></script>
+
+<script type="text/javascript">
+function OptanonWrapper() {
+  updateUI();
+}
+</script>
+
+<title>OneTrust Demo</title>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>🍪 Consent Demo</h1>
+
+<p>User: <span id="userInfo"></span></p>
+
+<div class="section">
+<iframe src="https://www.youtube.com/embed/TNqBv9h4_4Y"></iframe>
+</div>
+
+<div class="section">
+<iframe src="https://player.vimeo.com/video/76979871"></iframe>
+</div>
+
+<div class="section">
+<button id="ot-sdk-btn" class="ot-sdk-show-settings">Cookie Settings</button>
+</div>
+
+<div class="section">
+<h3>Consent Status</h3>
+
+<div class="status-box">
+<div id="groups"></div>
+<hr>
+<div id="cookies"></div>
+</div>
+
+</div>
+
+</div>
+
+<script>
+// ✅ Mostrar user en UI
+document.getElementById("userInfo").innerText = dynamicUser;
+
+// ✅ Obtener cookies
+function getCookies() {
+  return document.cookie.split(';').map(c => c.trim());
+}
+
+// ✅ Render UI
+function updateUI() {
+
+  // Grupos activos
+  let activeGroups = window.OnetrustActiveGroups || '';
+  let groupsDiv = document.getElementById("groups");
+
+  groupsDiv.innerHTML = "<b>Active Groups:</b><br>";
+
+  if (activeGroups) {
+    activeGroups.split(',').forEach(g => {
+      groupsDiv.innerHTML += `<span class="badge active">${g}</span>`;
+    });
+  } else {
+    groupsDiv.innerHTML += "No consent yet";
+  }
+
+  // Cookies
+  let cookies = getCookies();
+  let cookiesDiv = document.getElementById("cookies");
+
+  cookiesDiv.innerHTML = "<b>Browser Cookies:</b><br>";
+
+  cookies.forEach(c => {
+    cookiesDiv.innerHTML += `<div>${c}</div>`;
+  });
+}
+
+// ✅ Listener cambios consentimiento
+window.addEventListener("OneTrustGroupsUpdated", function() {
+  updateUI();
+});
+</script>
+
+</body>
+</html>
