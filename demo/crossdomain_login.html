@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OneTrust CMP — Demo Launcher</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:#f0f2f5;color:#1e293b;min-height:100vh;display:flex;flex-direction:column}
+
+/* HEADER */
+.header{background:#0f172a;color:#e2e8f0;padding:18px 24px;text-align:center}
+.header h1{font-size:22px;font-weight:700}
+.header .sub{font-size:12px;color:#94a3b8;margin-top:4px}
+
+/* MAIN */
+.main{flex:1;display:flex;align-items:center;justify-content:center;padding:24px 16px}
+
+/* CARD */
+.card{background:#fff;border-radius:16px;box-shadow:0 4px 24px rgba(0,0,0,.1);padding:36px;width:100%;max-width:540px}
+.card h2{font-size:18px;margin-bottom:6px}
+.card .desc{font-size:13px;color:#64748b;margin-bottom:24px}
+
+/* FORM */
+.field-label{font-size:13px;font-weight:600;color:#334155;margin-bottom:6px;display:block}
+.input{width:100%;padding:12px 14px;border:2px solid #e2e8f0;border-radius:10px;font-size:14px;outline:none;transition:.2s}
+.input:focus{border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.15)}
+
+/* BUTTONS */
+.btn-row{display:flex;gap:10px;margin-top:20px;flex-wrap:wrap}
+.btn{padding:12px 22px;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;transition:.15s;flex:1;min-width:160px;text-align:center}
+.btn-blue{background:#2563eb;color:#fff}.btn-blue:hover{background:#1d4ed8}
+.btn-green{background:#16a34a;color:#fff}.btn-green:hover{background:#15803d}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+
+/* JWT PREVIEW */
+.jwt-box{margin-top:20px;display:none}
+.jwt-box.show{display:block}
+.jwt-label{font-size:12px;font-weight:600;color:#334155;margin-bottom:6px}
+.jwt-preview{background:#0f172a;color:#a5f3fc;padding:14px;border-radius:10px;font-family:"Courier New",monospace;font-size:11px;word-break:break-all;max-height:120px;overflow-y:auto}
+.jwt-parts{margin-top:8px;font-size:11px;color:#64748b}
+.jwt-parts span{display:inline-block;padding:2px 8px;border-radius:6px;margin-right:4px;font-weight:600;color:#fff}
+.jwt-parts .hdr{background:#7c3aed}
+.jwt-parts .pld{background:#2563eb}
+.jwt-parts .sig{background:#059669}
+
+/* STATUS */
+.status{margin-top:16px;padding:10px 14px;border-radius:8px;font-size:12px;display:none}
+.status.ok{display:block;background:#f0fdf4;border:1px solid #86efac;color:#166534}
+.status.err{display:block;background:#fef2f2;border:1px solid #fca5a5;color:#991b1b}
+
+/* DEBUG */
+.debug-box{margin-top:20px}
+.debug-box summary{font-size:12px;font-weight:600;color:#64748b;cursor:pointer}
+.debug-log{background:#0f172a;color:#67e8f9;padding:12px;border-radius:8px;font-family:"Courier New",monospace;font-size:10px;max-height:180px;overflow-y:auto;margin-top:8px;white-space:pre-wrap}
+
+/* FOOTER */
+.footer{text-align:center;padding:16px;font-size:11px;color:#94a3b8}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🍪 OneTrust CMP — Demo Launcher</h1>
+  <div class="sub">Generate JWT &amp; launch Cross-Domain Consent demo with custom User ID</div>
+</div>
+
+<div class="main">
+  <div class="card">
+    <h2>🔐 Data Subject Configuration</h2>
+    <p class="desc">Enter the User ID that will be passed to OneTrust as the data subject identifier. A signed JWT (HS256) will be generated automatically.</p>
+
+    <label class="field-label" for="userId">User ID (email or custom identifier)</label>
+    <input class="input" type="text" id="userId" placeholder="johndoe2@onetrust.com" autocomplete="off">
+
+    <div class="btn-row">
+      <button class="btn btn-blue" id="btnGenerate" onclick="generateJWT()">🔑 Generate JWT</button>
+      <button class="btn btn-green" id="btnLaunch" onclick="launchDemo()" disabled>🚀 Launch Demo →</button>
+    </div>
+
+    <div class="status" id="status"></div>
+
+    <div class="jwt-box" id="jwtBox">
+      <div class="jwt-label">Generated JWT Token</div>
+      <div class="jwt-preview" id="jwtPreview"></div>
+      <div class="jwt-parts">
+        <span class="hdr">HEADER</span>
+        <span class="pld">PAYLOAD</span>
+        <span class="sig">SIGNATURE</span>
+      </div>
+    </div>
+
+    <details class="debug-box">
+      <summary>🐛 Debug Log</summary>
+      <div class="debug-log" id="debugLog">Ready.\n</div>
+    </details>
+  </div>
+</div>
+
+<div class="footer">OneTrust UCPM Demo — JWT generated client-side with Web Crypto API (HS256)</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var SECRET = 'oo7D5N8Ca0pQa9yWA0s9GGQiEx3Iym6mFJFuWULhzfh';
+  var generatedJWT = null;
+  var generatedUser = null;
+  var logEl = null;
+
+  function TS(){ return new Date().toISOString().substr(11,12); }
+
+  function dlog(msg){
+    console.log('[XDCD-LOGIN][' + TS() + '] ' + msg);
+    if(!logEl) logEl = document.getElementById('debugLog');
+    if(logEl){ logEl.textContent += '[' + TS() + '] ' + msg + '\n'; logEl.scrollTop = logEl.scrollHeight; }
+  }
+
+  function setStatus(type, msg){
+    var el = document.getElementById('status');
+    el.className = 'status ' + type;
+    el.textContent = msg;
+  }
+
+  /* ---- Base64URL ---- */
+  function base64url(buf){
+    var s = '';
+    var b = new Uint8Array(buf);
+    for(var i=0;i<b.length;i++) s += String.fromCharCode(b[i]);
+    return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+  }
+
+  /* ---- Generate JWT (async — OK because NO OneTrust on this page) ---- */
+  window.generateJWT = async function(){
+    var userEl = document.getElementById('userId');
+    var user = userEl.value.trim();
+    if(!user) user = 'johndoe2@onetrust.com';
+    userEl.value = user;
+
+    dlog('Starting JWT generation for: ' + user);
+
+    try{
+      var enc = new TextEncoder();
+
+      var headerJSON  = JSON.stringify({"alg":"HS256","typ":"JWT"});
+      var payloadJSON = JSON.stringify({"sub": user});
+
+      var headerB64  = base64url(enc.encode(headerJSON));
+      var payloadB64 = base64url(enc.encode(payloadJSON));
+      var data = headerB64 + '.' + payloadB64;
+
+      dlog('Header  (b64url): ' + headerB64);
+      dlog('Payload (b64url): ' + payloadB64);
+      dlog('Signing data: ' + data);
+
+      var key = await crypto.subtle.importKey(
+        'raw', enc.encode(SECRET),
+        {name:'HMAC', hash:'SHA-256'}, false, ['sign']
+      );
+      dlog('HMAC key imported ✔');
+
+      var sig = await crypto.subtle.sign('HMAC', key, enc.encode(data));
+      var jwt = data + '.' + base64url(sig);
+
+      dlog('Signature computed ✔');
+      dlog('JWT: ' + jwt);
+
+      generatedJWT  = jwt;
+      generatedUser = user;
+
+      /* Update UI */
+      document.getElementById('jwtPreview').textContent = jwt;
+      document.getElementById('jwtBox').className = 'jwt-box show';
+      document.getElementById('btnLaunch').disabled = false;
+      setStatus('ok', '✅ JWT generated successfully for "' + user + '" — Ready to launch!');
+
+      dlog('Ready to launch demo ✔');
+
+    }catch(e){
+      dlog('ERROR: ' + e.message);
+      setStatus('err', '❌ JWT generation failed: ' + e.message);
+      generatedJWT = null;
+      document.getElementById('btnLaunch').disabled = true;
+    }
+  };
+
+  /* ---- Launch demo ---- */
+  window.launchDemo = function(){
+    if(!generatedJWT || !generatedUser){
+      setStatus('err', '❌ Generate the JWT first!');
+      return;
+    }
+    var url = 'crossdomain_demo.html?user=' + encodeURIComponent(generatedUser) + '&jwt=' + encodeURIComponent(generatedJWT);
+    dlog('Redirecting to: ' + url);
+    window.location.href = url;
+  };
+
+  /* ---- Enter key support ---- */
+  document.addEventListener('DOMContentLoaded', function(){
+    document.getElementById('userId').addEventListener('keydown', function(e){
+      if(e.key === 'Enter'){ e.preventDefault(); generateJWT(); }
+    });
+    dlog('Login page initialized');
+  });
+
+})();
+</script>
+
+</body>
+</html>
