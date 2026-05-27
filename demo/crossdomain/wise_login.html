@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wise — Log in</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:#F2F5E9;color:#163300;min-height:100vh;display:flex;flex-direction:column}
+.topbar{background:#163300;padding:16px 32px;display:flex;align-items:center}
+.topbar img{height:28px}
+.main{flex:1;display:flex;align-items:center;justify-content:center;padding:24px 16px}
+.card{background:#fff;border-radius:16px;box-shadow:0 4px 32px rgba(22,51,0,.12);padding:40px;width:100%;max-width:420px}
+.card h2{font-size:24px;font-weight:700;color:#163300;margin-bottom:8px}
+.card .sub{font-size:14px;color:#5B6B4F;margin-bottom:28px}
+label{display:block;font-size:13px;font-weight:600;color:#163300;margin-bottom:6px}
+.input-wrap{margin-bottom:16px}
+.input{width:100%;padding:14px 16px;border:2px solid #D4DBC8;border-radius:12px;font-size:15px;outline:none;transition:.2s;background:#fff;color:#163300}
+.input:focus{border-color:#9FE870;box-shadow:0 0 0 3px rgba(159,232,112,.3)}
+.input:disabled{background:#F2F5E9;color:#9CA88E;cursor:not-allowed}
+.btn-login{width:100%;padding:16px;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;transition:.2s;background:#9FE870;color:#163300;margin-top:8px}
+.btn-login:hover{background:#8AD85F}
+.btn-login:active{transform:scale(.98)}
+.btn-login:disabled{opacity:.6;cursor:not-allowed}
+.forgot{display:block;text-align:center;margin-top:16px;font-size:13px;color:#5B6B4F;text-decoration:none}
+.forgot:hover{color:#163300;text-decoration:underline}
+.error-msg{background:#FEF2F2;border:1px solid #FCA5A5;color:#991B1B;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:16px;display:none}
+.footer{text-align:center;padding:20px;font-size:11px;color:#9CA88E}
+.loading{display:none;text-align:center;margin-top:12px;font-size:13px;color:#5B6B4F}
+.loading.show{display:block}
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid #D4DBC8;border-top-color:#9FE870;border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;margin-right:6px}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e8/Wise_Logo_512x124.svg/1280px-Wise_Logo_512x124.svg.png" alt="Wise" style="filter:brightness(0) invert(1)">
+</div>
+<div class="main">
+  <div class="card">
+    <h2>Log in to Wise</h2>
+    <p class="sub">Enter your email to access your account</p>
+    <div class="error-msg" id="errorMsg"></div>
+    <div class="input-wrap">
+      <label for="email">Email address</label>
+      <input class="input" type="email" id="email" placeholder="your@email.com" autocomplete="email">
+    </div>
+    <div class="input-wrap">
+      <label for="password">Password</label>
+      <input class="input" type="password" id="password" placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;" disabled>
+    </div>
+    <button class="btn-login" id="btnLogin" onclick="handleLogin()">Log in</button>
+    <div class="loading" id="loading"><span class="spinner"></span>Signing you in&hellip;</div>
+    <a href="#" class="forgot">Forgot your password?</a>
+  </div>
+</div>
+<div class="footer">&copy; 2026 Wise Payments Limited. Authorised by the Financial Conduct Authority.</div>
+<script>
+(function(){
+  "use strict";
+  var SECRET = 'oo7D5N8Ca0pQa9yWA0s9GGQiEx3Iym6mFJFuWULhzfh';
+
+  function base64url(buf){
+    var s = '';
+    var b = new Uint8Array(buf);
+    for(var i=0;i<b.length;i++) s += String.fromCharCode(b[i]);
+    return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+  }
+
+  window.handleLogin = async function(){
+    var emailEl = document.getElementById('email');
+    var user = emailEl.value.trim();
+    var errEl = document.getElementById('errorMsg');
+    errEl.style.display = 'none';
+
+    if(!user){
+      errEl.textContent = 'Please enter your email address.';
+      errEl.style.display = 'block';
+      emailEl.focus();
+      return;
+    }
+
+    document.getElementById('btnLogin').disabled = true;
+    document.getElementById('loading').className = 'loading show';
+
+    try{
+      var enc = new TextEncoder();
+      var headerJSON = JSON.stringify({"alg":"HS256","typ":"JWT"});
+      var payloadJSON = JSON.stringify({"sub": user});
+      var headerB64 = base64url(enc.encode(headerJSON));
+      var payloadB64 = base64url(enc.encode(payloadJSON));
+      var data = headerB64 + '.' + payloadB64;
+
+      var key = await crypto.subtle.importKey(
+        'raw', enc.encode(SECRET),
+        {name:'HMAC', hash:'SHA-256'}, false, ['sign']
+      );
+      var sig = await crypto.subtle.sign('HMAC', key, enc.encode(data));
+      var jwt = data + '.' + base64url(sig);
+
+      console.log('[WISE-LOGIN] JWT generated for: ' + user);
+
+      setTimeout(function(){
+        var url = 'wise_dashboard.html?user=' + encodeURIComponent(user) + '&jwt=' + encodeURIComponent(jwt);
+        window.location.href = url;
+      }, 800);
+    }catch(e){
+      errEl.textContent = 'Authentication failed. Please try again.';
+      errEl.style.display = 'block';
+      document.getElementById('btnLogin').disabled = false;
+      document.getElementById('loading').className = 'loading';
+    }
+  };
+
+  document.addEventListener('DOMContentLoaded', function(){
+    document.getElementById('email').addEventListener('keydown', function(e){
+      if(e.key === 'Enter'){ e.preventDefault(); handleLogin(); }
+    });
+  });
+})();
+</script>
+</body>
+</html>

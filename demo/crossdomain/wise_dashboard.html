@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wise &mdash; Your Account</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:#F2F5E9;color:#163300;line-height:1.5}
+
+/* NAV */
+.navbar{background:#163300;padding:0 32px;display:flex;align-items:center;height:60px;gap:32px}
+.navbar img{height:24px;filter:brightness(0) invert(1)}
+.nav-links{display:flex;gap:24px;flex:1;justify-content:center}
+.nav-links a{color:#B8C9A3;font-size:14px;font-weight:600;text-decoration:none;padding:18px 4px;border-bottom:2px solid transparent;transition:.2s}
+.nav-links a:hover,.nav-links a.active{color:#fff;border-bottom-color:#9FE870}
+.nav-right{display:flex;align-items:center;gap:12px}
+.nav-avatar{width:32px;height:32px;border-radius:50%;background:#9FE870;color:#163300;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px}
+.nav-user{color:#B8C9A3;font-size:13px}
+.nav-logout{color:#B8C9A3;font-size:12px;text-decoration:none;margin-left:8px;opacity:.7}
+.nav-logout:hover{color:#fff;opacity:1}
+
+/* LAYOUT */
+.wrap{max-width:1000px;margin:0 auto;padding:24px 16px}
+.card{background:#fff;border-radius:16px;box-shadow:0 1px 4px rgba(22,51,0,.06);padding:24px;margin-bottom:20px}
+.card h2{font-size:18px;font-weight:700;color:#163300;margin-bottom:4px;display:flex;align-items:center;gap:8px}
+.card .subtitle{font-size:13px;color:#5B6B4F;margin-bottom:16px}
+
+/* BALANCES */
+.balance-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+@media(max-width:640px){.balance-grid{grid-template-columns:1fr}}
+.balance-item{background:#F2F5E9;border-radius:12px;padding:20px;text-align:center;border:1px solid #D4DBC8}
+.balance-flag{font-size:28px;margin-bottom:4px}
+.balance-amount{font-size:24px;font-weight:700;color:#163300}
+.balance-currency{font-size:13px;color:#5B6B4F;font-weight:600;margin-top:2px}
+
+/* QUICK ACTIONS */
+.actions-row{display:flex;gap:12px;flex-wrap:wrap}
+.action-btn{padding:12px 24px;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;transition:.15s;border:2px solid #163300;background:transparent;color:#163300}
+.action-btn:hover{background:#163300;color:#fff}
+.action-btn.primary{background:#9FE870;color:#163300;border-color:#9FE870}
+.action-btn.primary:hover{background:#8AD85F;border-color:#8AD85F}
+
+/* TRANSACTIONS */
+.tx-table{width:100%;border-collapse:collapse;font-size:13px}
+.tx-table th{text-align:left;padding:10px 12px;border-bottom:2px solid #D4DBC8;font-weight:600;color:#5B6B4F;font-size:12px;text-transform:uppercase;letter-spacing:.5px}
+.tx-table td{padding:12px;border-bottom:1px solid #F2F5E9}
+.tx-table tr:hover td{background:#FAFCF5}
+.tx-amount{font-weight:700;white-space:nowrap}
+.tx-amount.positive{color:#16A34A}
+.tx-amount.negative{color:#163300}
+.tx-status{display:inline-block;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:600}
+.tx-status.completed{background:#E8F5E0;color:#166534}
+.tx-status.received{background:#DBEAFE;color:#1E40AF}
+.tx-status.converted{background:#FEF3C7;color:#92400E}
+
+/* CONSENT */
+.consent-section{border-top:3px solid #9FE870}
+.badge{display:inline-block;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600;margin:3px 4px 3px 0;color:#fff}
+.badge.active{background:#16a34a}
+.badge.blocked{background:#dc2626}
+.badge.pending{background:#94a3b8}
+.badge.label{background:#334155;min-width:48px;text-align:center}
+.consent-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+.cbtn{padding:10px 18px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;transition:.15s;border:2px solid}
+.cbtn-green{background:#E8F5E0;color:#166534;border-color:#86EFAC}.cbtn-green:hover{background:#166534;color:#fff}
+.cbtn-amber{background:#FEF3C7;color:#92400E;border-color:#FCD34D}.cbtn-amber:hover{background:#92400E;color:#fff}
+.cbtn-red{background:#FEF2F2;color:#991B1B;border-color:#FCA5A5}.cbtn-red:hover{background:#991B1B;color:#fff}
+.cbtn-dark{background:#163300;color:#fff;border-color:#163300}.cbtn-dark:hover{background:#0D1F00}
+#ot-sdk-btn.ot-sdk-show-settings{padding:10px 18px !important;border-radius:10px !important;font-weight:600 !important;background:#163300 !important;color:#fff !important;border:2px solid #163300 !important}
+
+/* ADVANCED */
+.advanced{margin-top:16px}
+.advanced summary{font-size:13px;font-weight:600;color:#5B6B4F;cursor:pointer;padding:8px 0}
+.advanced summary:hover{color:#163300}
+.tbl{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px}
+.tbl th{background:#F2F5E9;text-align:left;padding:8px 10px;border-bottom:2px solid #D4DBC8;font-weight:600;white-space:nowrap;color:#163300}
+.tbl td{padding:7px 10px;border-bottom:1px solid #F2F5E9;word-break:break-all}
+.tbl tr:hover td{background:#FAFCF5}
+.fire-log{list-style:none;padding:0;margin:8px 0 0;font-size:12px}
+.fire-log li{padding:5px 0;border-bottom:1px solid #F2F5E9;display:flex;align-items:center;gap:6px}
+.dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.dot.green{background:#16a34a}.dot.red{background:#dc2626}
+.debug-box{background:#163300;color:#9FE870;border-radius:10px;padding:14px;font-family:"Courier New",monospace;font-size:11px;max-height:200px;overflow-y:auto;margin-top:8px;white-space:pre-wrap}
+
+/* ERROR */
+.error-card{background:#fff;border:2px solid #FCA5A5;border-radius:16px;padding:48px;text-align:center;margin:80px auto;max-width:480px;box-shadow:0 4px 32px rgba(22,51,0,.08)}
+.error-card h2{color:#991B1B;margin-bottom:12px;font-size:20px}
+.error-card p{color:#5B6B4F;font-size:14px;margin-bottom:20px}
+.error-card a{display:inline-block;padding:12px 28px;background:#9FE870;color:#163300;font-weight:700;border-radius:12px;text-decoration:none;transition:.2s}
+.error-card a:hover{background:#8AD85F}
+
+/* FOOTER */
+.site-footer{text-align:center;padding:24px 16px;font-size:11px;color:#9CA88E;border-top:1px solid #D4DBC8;margin-top:20px}
+.site-footer a{color:#5B6B4F;text-decoration:none;margin:0 12px}
+.site-footer a:hover{color:#163300;text-decoration:underline}
+</style>
+
+<!-- ============================================================
+     STEP 1 - Read URL params & set dataSubjectParams
+     TOP-LEVEL SCOPE - NO IIFE, NO "use strict"
+     ============================================================ -->
+<script>
+var __xdcd_params = new URLSearchParams(window.location.search);
+var __xdcd_userID = __xdcd_params.get('user') || __xdcd_params.get('id') || '';
+var __xdcd_jwt    = __xdcd_params.get('jwt') || '';
+
+console.log('[XDCD-INIT] user = ' + (__xdcd_userID || '(empty)'));
+console.log('[XDCD-INIT] jwt  = ' + (__xdcd_jwt ? __xdcd_jwt.substr(0,40) + '\u2026' : '(empty)'));
+
+/* TOP-LEVEL var - becomes window.OneTrust */
+window.OneTrust = {
+  dataSubjectParams: {
+    id          : __xdcd_userID,
+    isAnonymous : false,
+    token       : __xdcd_jwt
+  }
+};
+
+console.log('[XDCD-OT] dataSubjectParams SET at TOP-LEVEL scope');
+console.log('[XDCD-OT] window.OneTrust === OneTrust: ' + (window.OneTrust === OneTrust));
+console.log('[XDCD-OT] id: ' + OneTrust.dataSubjectParams.id);
+console.log('[XDCD-OT] token: ' + (OneTrust.dataSubjectParams.token ? OneTrust.dataSubjectParams.token.substr(0,50) + '\u2026' : '(empty)'));
+
+/* Expose for UI logic */
+window.__XDCD = {
+  userID  : __xdcd_userID,
+  jwt     : __xdcd_jwt,
+  jwtOK   : !!(__xdcd_userID && __xdcd_jwt),
+  fireLog : []
+};
+
+if(!__xdcd_userID || !__xdcd_jwt) window.__XDCD_NO_PARAMS = true;
+</script>
+
+<!-- ============================================================
+     STEP 2 - OneTrust STATIC tags
+     ============================================================ -->
+<script src="https://cdn.cookielaw.org/consent/019e6846-7893-7c6f-a9f7-fd6c5c6ffa53-test/otSDKStub.js" type="text/javascript" charset="UTF-8" data-domain-script="019e6846-7893-7c6f-a9f7-fd6c5c6ffa53-test"></script>
+<script type="text/javascript">
+function OptanonWrapper() {
+  console.log('[XDCD-OT] OptanonWrapper fired');
+  if(typeof updateAllPanels === 'function') updateAllPanels();
+}
+</script>
+</head>
+<body>
+
+<!-- ============ NAVBAR ============ -->
+<div class="navbar">
+  <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e8/Wise_Logo_512x124.svg/1280px-Wise_Logo_512x124.svg.png" alt="Wise">
+  <div class="nav-links">
+    <a href="#" class="active">Home</a>
+    <a href="#">Send</a>
+    <a href="#">Recipients</a>
+    <a href="#">Card</a>
+    <a href="#">Account</a>
+  </div>
+  <div class="nav-right">
+    <div class="nav-avatar" id="navAvatar">?</div>
+    <span class="nav-user" id="navUser">Hello</span>
+    <a href="wise_login.html" class="nav-logout">Log out</a>
+  </div>
+</div>
+
+<!-- ERROR STATE (no params) -->
+<div class="error-card" id="errorCard" style="display:none">
+  <h2>Session expired</h2>
+  <p>We couldn't verify your identity. Please log in again to access your account.</p>
+  <a href="wise_login.html">Log in to Wise</a>
+</div>
+
+<div class="wrap" id="mainContent">
+
+  <!-- ============ BALANCES ============ -->
+  <div class="card">
+    <h2>Your balances</h2>
+    <p class="subtitle">Multi-currency account overview</p>
+    <div class="balance-grid">
+      <div class="balance-item">
+        <div class="balance-flag">&#127466;&#127482;</div>
+        <div class="balance-amount">&euro;12,450.80</div>
+        <div class="balance-currency">Euro &mdash; EUR</div>
+      </div>
+      <div class="balance-item">
+        <div class="balance-flag">&#127468;&#127463;</div>
+        <div class="balance-amount">&pound;3,200.15</div>
+        <div class="balance-currency">British Pound &mdash; GBP</div>
+      </div>
+      <div class="balance-item">
+        <div class="balance-flag">&#127482;&#127480;</div>
+        <div class="balance-amount">$8,750.00</div>
+        <div class="balance-currency">US Dollar &mdash; USD</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ QUICK ACTIONS ============ -->
+  <div class="card">
+    <h2>Quick actions</h2>
+    <div class="actions-row" style="margin-top:8px">
+      <button class="action-btn primary">&#128184; Send money</button>
+      <button class="action-btn">&#128260; Convert</button>
+      <button class="action-btn">&#10133; Add money</button>
+      <button class="action-btn">&#128202; Statements</button>
+    </div>
+  </div>
+
+  <!-- ============ TRANSACTIONS ============ -->
+  <div class="card">
+    <h2>Recent transactions</h2>
+    <p class="subtitle">Last 7 days</p>
+    <div style="overflow-x:auto">
+      <table class="tx-table">
+        <thead>
+          <tr><th>Date</th><th>Description</th><th>Amount</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>26 May 2026</td><td>Netflix Subscription</td>
+            <td class="tx-amount negative">-&euro;14.99</td>
+            <td><span class="tx-status completed">Completed</span></td>
+          </tr>
+          <tr>
+            <td>25 May 2026</td><td>Transfer to John Smith</td>
+            <td class="tx-amount negative">-&pound;500.00</td>
+            <td><span class="tx-status completed">Completed</span></td>
+          </tr>
+          <tr>
+            <td>24 May 2026</td><td>Amazon.es &mdash; Order #402-8834</td>
+            <td class="tx-amount negative">-&euro;67.32</td>
+            <td><span class="tx-status completed">Completed</span></td>
+          </tr>
+          <tr>
+            <td>23 May 2026</td><td>Salary &mdash; Acme Corp</td>
+            <td class="tx-amount positive">+&euro;4,200.00</td>
+            <td><span class="tx-status received">Received</span></td>
+          </tr>
+          <tr>
+            <td>22 May 2026</td><td>Uber Eats</td>
+            <td class="tx-amount negative">-&euro;23.50</td>
+            <td><span class="tx-status completed">Completed</span></td>
+          </tr>
+          <tr>
+            <td>21 May 2026</td><td>Currency Exchange EUR &rarr; USD</td>
+            <td class="tx-amount negative">-&euro;1,000.00</td>
+            <td><span class="tx-status converted">Converted</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ============ EXCHANGE RATES ============ -->
+  <div class="card">
+    <h2>&#128177; Live exchange rates</h2>
+    <p class="subtitle">Mid-market rates &mdash; updated every 30 seconds</p>
+    <div style="display:flex;gap:24px;flex-wrap:wrap;margin-top:8px">
+      <div style="background:#F2F5E9;padding:16px 24px;border-radius:12px;border:1px solid #D4DBC8">
+        <div style="font-size:13px;color:#5B6B4F">EUR &rarr; GBP</div>
+        <div style="font-size:22px;font-weight:700;color:#163300">0.8432</div>
+      </div>
+      <div style="background:#F2F5E9;padding:16px 24px;border-radius:12px;border:1px solid #D4DBC8">
+        <div style="font-size:13px;color:#5B6B4F">EUR &rarr; USD</div>
+        <div style="font-size:22px;font-weight:700;color:#163300">1.0891</div>
+      </div>
+      <div style="background:#F2F5E9;padding:16px 24px;border-radius:12px;border:1px solid #D4DBC8">
+        <div style="font-size:13px;color:#5B6B4F">GBP &rarr; USD</div>
+        <div style="font-size:22px;font-weight:700;color:#163300">1.2914</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ PRIVACY & CONSENT ============ -->
+  <div class="card consent-section">
+    <h2>&#128737;&#65039; Privacy &amp; Consent Settings</h2>
+    <p class="subtitle">Manage how your data is used across our services. Powered by OneTrust.</p>
+
+    <!-- Logged-in user info -->
+    <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:#F2F5E9;border-radius:10px;margin-bottom:16px">
+      <div class="nav-avatar" id="consentAvatar" style="width:36px;height:36px;font-size:14px">?</div>
+      <div>
+        <div style="font-weight:700;font-size:14px" id="consentUser">&mdash;</div>
+        <div style="font-size:11px;color:#5B6B4F">Consent profile linked via cross-domain token</div>
+      </div>
+    </div>
+
+    <!-- Consent groups -->
+    <div style="font-size:13px;font-weight:600;color:#163300;margin-bottom:8px">Consent categories</div>
+    <div id="groupsPanel">
+      <span class="badge pending">&#9203; C0001 Strictly Necessary</span>
+      <span class="badge pending">&#9203; C0002 Performance</span>
+      <span class="badge pending">&#9203; C0003 Functional</span>
+      <span class="badge pending">&#9203; C0004 Targeting</span>
+      <span class="badge pending">&#9203; C0005 Social Media</span>
+    </div>
+
+    <!-- Action buttons -->
+    <div class="consent-actions">
+      <button class="cbtn cbtn-green" onclick="simulateCookies()">&#127850; Simulate Cookies</button>
+      <button class="cbtn cbtn-amber" onclick="fireMarketingEvents()">&#128640; Fire Marketing Events</button>
+      <button class="cbtn cbtn-green" onclick="updateAllPanels()">&#128260; Refresh</button>
+      <button class="cbtn cbtn-red" onclick="clearAllCookies()">&#128465;&#65039; Clear Cookies</button>
+      <button id="ot-sdk-btn" class="ot-sdk-show-settings cbtn cbtn-dark">&#9881;&#65039; Cookie Settings</button>
+    </div>
+
+    <!-- Advanced: Cookie Inspector -->
+    <details class="advanced">
+      <summary>&#128203; Cookie Inspector</summary>
+      <div style="overflow-x:auto">
+        <table class="tbl">
+          <thead>
+            <tr><th>Cookie Name</th><th>Category</th><th>Group</th><th>Status</th><th>Value</th></tr>
+          </thead>
+          <tbody id="cookieBody">
+            <tr><td colspan="5" style="color:#9CA88E;text-align:center">No cookies yet &mdash; click <b>Simulate Cookies</b></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </details>
+
+    <!-- Advanced: Marketing Event Log -->
+    <details class="advanced">
+      <summary>&#128225; Marketing Event Log</summary>
+      <ul class="fire-log" id="fireLog">
+        <li style="color:#9CA88E">No events yet &mdash; click <b>Fire Marketing Events</b></li>
+      </ul>
+    </details>
+
+    <!-- Advanced: Debug Console -->
+    <details class="advanced">
+      <summary>&#128027; Debug Console</summary>
+      <div class="debug-box" id="debugLog">Waiting for initialization&hellip;</div>
+    </details>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<div class="site-footer">
+  <a href="#">Privacy Policy</a>
+  <a href="#" onclick="document.getElementById('ot-sdk-btn').click();return false;">Cookie Settings</a>
+  <a href="#">Terms of Use</a>
+  <br><br>
+  &copy; 2026 Wise Payments Limited. Authorised by the Financial Conduct Authority under the Electronic Money Regulations 2011.
+</div>
+
+<!-- ============================================================
+     CATEGORIZED SCRIPTS - OneTrust AutoBlock manages these
+     ============================================================ -->
+<script type="text/plain" class="optanon-category-C0002">
+  console.log('[XDCD-FIRE] C0002 Performance script FIRED (static AutoBlock)');
+  if(window.__XDCD) window.__XDCD.fireLog.push({cat:'C0002',name:'Google Analytics (performance) [AutoBlock]',status:'fired',ts:new Date().toISOString()});
+  if(typeof updateFireLog==='function') updateFireLog();
+</script>
+<script type="text/plain" class="optanon-category-C0003">
+  console.log('[XDCD-FIRE] C0003 Functional script FIRED (static AutoBlock)');
+  if(window.__XDCD) window.__XDCD.fireLog.push({cat:'C0003',name:'User Preferences (functional) [AutoBlock]',status:'fired',ts:new Date().toISOString()});
+  if(typeof updateFireLog==='function') updateFireLog();
+</script>
+<script type="text/plain" class="optanon-category-C0004">
+  console.log('[XDCD-FIRE] C0004 Facebook Pixel FIRED (static AutoBlock)');
+  if(window.__XDCD) window.__XDCD.fireLog.push({cat:'C0004',name:'Facebook Pixel (targeting) [AutoBlock]',status:'fired',ts:new Date().toISOString()});
+  if(typeof updateFireLog==='function') updateFireLog();
+</script>
+<script type="text/plain" class="optanon-category-C0004">
+  console.log('[XDCD-FIRE] C0004 Google Ads FIRED (static AutoBlock)');
+  if(window.__XDCD) window.__XDCD.fireLog.push({cat:'C0004',name:'Google Ads (targeting) [AutoBlock]',status:'fired',ts:new Date().toISOString()});
+  if(typeof updateFireLog==='function') updateFireLog();
+</script>
+<script type="text/plain" class="optanon-category-C0005">
+  console.log('[XDCD-FIRE] C0005 LinkedIn Insight FIRED (static AutoBlock)');
+  if(window.__XDCD) window.__XDCD.fireLog.push({cat:'C0005',name:'LinkedIn Insight (social) [AutoBlock]',status:'fired',ts:new Date().toISOString()});
+  if(typeof updateFireLog==='function') updateFireLog();
+</script>
+<script type="text/plain" class="optanon-category-C0005">
+  console.log('[XDCD-FIRE] C0005 Twitter/X Pixel FIRED (static AutoBlock)');
+  if(window.__XDCD) window.__XDCD.fireLog.push({cat:'C0005',name:'Twitter/X Pixel (social) [AutoBlock]',status:'fired',ts:new Date().toISOString()});
+  if(typeof updateFireLog==='function') updateFireLog();
+</script>
+
+<!-- ============================================================
+     MAIN APP LOGIC
+     ============================================================ -->
+<script>
+(function(){
+  "use strict";
+  var TS = function(){ return new Date().toISOString().substr(11,12); };
+  var logBuffer = [];
+  function dlog(prefix, msg){
+    var line = '[' + prefix + '][' + TS() + '] ' + msg;
+    console.log(line);
+    logBuffer.push(line);
+    var el = document.getElementById('debugLog');
+    if(el){ el.textContent = logBuffer.join('\n'); el.scrollTop = el.scrollHeight; }
+  }
+
+  /* ---- Check if params are present ---- */
+  if(window.__XDCD_NO_PARAMS){
+    document.getElementById('errorCard').style.display = 'block';
+    document.getElementById('mainContent').style.display = 'none';
+    var nb = document.querySelector('.navbar');
+    if(nb) nb.style.display = 'none';
+    var ft = document.querySelector('.site-footer');
+    if(ft) ft.style.display = 'none';
+    return;
+  }
+
+  dlog('XDCD-INIT', 'Wise Dashboard loaded');
+  dlog('XDCD-INIT', 'User: ' + window.__XDCD.userID);
+  dlog('XDCD-INIT', 'JWT received via URL');
+  dlog('XDCD-OT', 'window.OneTrust exists: ' + (!!window.OneTrust));
+  dlog('XDCD-OT', 'dataSubjectParams.id: ' + (window.OneTrust && window.OneTrust.dataSubjectParams ? window.OneTrust.dataSubjectParams.id : 'N/A'));
+
+  /* Set nav user info */
+  var uname = window.__XDCD.userID;
+  var initial = (uname.charAt(0) || '?').toUpperCase();
+  document.getElementById('navAvatar').textContent = initial;
+  document.getElementById('navUser').textContent = 'Hello, ' + uname.split('@')[0];
+
+  /* ---- Cookie definitions by category ---- */
+  var COOKIE_DEFS = [
+    {name:'__session_id', cat:'C0001', catLabel:'Strictly Necessary', value:'sid_' + Math.random().toString(36).substr(2,12)},
+    {name:'__csrf_token', cat:'C0001', catLabel:'Strictly Necessary', value:'csrf_' + Math.random().toString(36).substr(2,16)},
+    {name:'__secure_ref', cat:'C0001', catLabel:'Strictly Necessary', value:'ref_' + Date.now()},
+    {name:'_ga',          cat:'C0002', catLabel:'Performance', value:'GA1.2.' + Math.floor(Math.random()*1e9) + '.' + Math.floor(Date.now()/1000)},
+    {name:'_gid',         cat:'C0002', catLabel:'Performance', value:'GA1.2.' + Math.floor(Math.random()*1e9) + '.' + Math.floor(Date.now()/1000)},
+    {name:'_gat_UA',      cat:'C0002', catLabel:'Performance', value:'1'},
+    {name:'lang_pref',    cat:'C0003', catLabel:'Functional', value:'en-GB'},
+    {name:'ui_theme',     cat:'C0003', catLabel:'Functional', value:'dark'},
+    {name:'timezone_offset',cat:'C0003', catLabel:'Functional', value:String(new Date().getTimezoneOffset())},
+    {name:'_fbp',         cat:'C0004', catLabel:'Targeting', value:'fb.1.' + Date.now() + '.' + Math.floor(Math.random()*1e9)},
+    {name:'_gcl_au',      cat:'C0004', catLabel:'Targeting', value:'1.1.' + Math.floor(Math.random()*1e9) + '.' + Math.floor(Date.now()/1000)},
+    {name:'IDE',          cat:'C0004', catLabel:'Targeting', value:'AHWqTU' + Math.random().toString(36).substr(2,20)},
+    {name:'fr',           cat:'C0004', catLabel:'Targeting', value:'0' + Math.random().toString(36).substr(2,16) + '.AWX' + Math.random().toString(36).substr(2,8)},
+    {name:'lidc',         cat:'C0005', catLabel:'Social Media', value:'b=VB' + Math.floor(Math.random()*100) + ':g=' + Math.floor(Math.random()*9999)},
+    {name:'bcookie',      cat:'C0005', catLabel:'Social Media', value:'v=2&' + Math.random().toString(36).substr(2,20)},
+    {name:'_pinterest_sess',cat:'C0005', catLabel:'Social Media', value:'TWc9PS' + btoa(String(Date.now())).replace(/=/g,'')}
+  ];
+
+  /* -------- Simulate Cookies -------- */
+  window.simulateCookies = function(){
+    dlog('XDCD-COOKIE','Setting ' + COOKIE_DEFS.length + ' simulated cookies...');
+    COOKIE_DEFS.forEach(function(c){
+      document.cookie = c.name + '=' + encodeURIComponent(c.value) + '; path=/; SameSite=Lax';
+      dlog('XDCD-COOKIE','  SET ' + c.cat + ' -> ' + c.name);
+    });
+    dlog('XDCD-COOKIE','All cookies written');
+    updateAllPanels();
+  };
+
+  /* -------- Clear Cookies -------- */
+  window.clearAllCookies = function(){
+    dlog('XDCD-COOKIE','Clearing all cookies...');
+    document.cookie.split(';').forEach(function(c){
+      var name = c.split('=')[0].trim();
+      document.cookie = name + '=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
+    });
+    window.__XDCD.fireLog = [];
+    dlog('XDCD-COOKIE','Cookies cleared');
+    updateAllPanels();
+  };
+
+  /* -------- Fire Marketing Events -------- */
+  window.fireMarketingEvents = function(){
+    dlog('XDCD-FIRE','Attempting to fire categorized marketing scripts...');
+    var events = [
+      {cat:'C0002', name:'GA4 Pageview (performance)'},
+      {cat:'C0003', name:'User Preferences Sync (functional)'},
+      {cat:'C0004', name:'FB Pixel PageView (targeting)'},
+      {cat:'C0004', name:'Google Ads Conversion (targeting)'},
+      {cat:'C0005', name:'LinkedIn Insight Tag (social)'},
+      {cat:'C0005', name:'Twitter/X Universal Tag (social)'}
+    ];
+    var activeGroups = (window.OnetrustActiveGroups || '').replace(/^,|,$/g,'').split(',');
+    events.forEach(function(evt){
+      var allowed = activeGroups.indexOf(evt.cat) !== -1;
+      var entry = {cat:evt.cat, name:evt.name, status: allowed ? 'fired' : 'BLOCKED', ts: new Date().toISOString()};
+      if(allowed){
+        var s = document.createElement('script');
+        s.className = 'optanon-category-' + evt.cat;
+        s.textContent = 'console.log("[XDCD-FIRE] Dynamic ' + evt.name + ' executed");';
+        document.body.appendChild(s);
+        dlog('XDCD-FIRE', evt.cat + ' ' + evt.name + ' -> FIRED');
+      } else {
+        dlog('XDCD-FIRE', evt.cat + ' ' + evt.name + ' -> BLOCKED (no consent)');
+      }
+      window.__XDCD.fireLog.push(entry);
+    });
+    updateFireLog();
+  };
+
+  /* -------- get active groups -------- */
+  function getActiveGroups(){
+    var raw = window.OnetrustActiveGroups || '';
+    return raw.replace(/^,|,$/g,'').split(',').filter(Boolean);
+  }
+
+  /* -------- Update all panels -------- */
+  window.updateAllPanels = function(){
+    dlog('XDCD-UI','Refreshing all panels...');
+    updateUserCard();
+    updateGroupsPanel();
+    updateCookieTable();
+    updateFireLog();
+  };
+
+  /* ---- User card ---- */
+  function updateUserCard(){
+    var uid = window.__XDCD.userID;
+    document.getElementById('consentUser').textContent = uid;
+    document.getElementById('consentAvatar').textContent = (uid.charAt(0) || '?').toUpperCase();
+  }
+
+  /* ---- Groups panel ---- */
+  function updateGroupsPanel(){
+    var active = getActiveGroups();
+    var cats = [
+      {id:'C0001',label:'Strictly Necessary'},
+      {id:'C0002',label:'Performance'},
+      {id:'C0003',label:'Functional'},
+      {id:'C0004',label:'Targeting'},
+      {id:'C0005',label:'Social Media'}
+    ];
+    var html = '';
+    cats.forEach(function(c){
+      var isActive = active.indexOf(c.id) !== -1;
+      var cls = isActive ? 'active' : (active.length > 0 ? 'blocked' : 'pending');
+      var icon = isActive ? '&#9989;' : (active.length > 0 ? '&#128683;' : '&#9203;');
+      html += '<span class="badge ' + cls + '">' + icon + ' ' + c.id + ' ' + c.label + '</span> ';
+    });
+    document.getElementById('groupsPanel').innerHTML = html;
+    dlog('XDCD-UI','Active groups: [' + active.join(', ') + ']');
+  }
+
+  /* ---- Cookie table ---- */
+  function updateCookieTable(){
+    var cookies = document.cookie.split(';').map(function(c){return c.trim()}).filter(Boolean);
+    var active = getActiveGroups();
+    var catMap = {};
+    COOKIE_DEFS.forEach(function(d){ catMap[d.name] = d; });
+    var body = document.getElementById('cookieBody');
+    if(cookies.length === 0){
+      body.innerHTML = '<tr><td colspan="5" style="color:#9CA88E;text-align:center">No cookies found</td></tr>';
+      return;
+    }
+    var html = '';
+    cookies.forEach(function(c){
+      var parts = c.split('=');
+      var name = parts[0];
+      var val = decodeURIComponent(parts.slice(1).join('='));
+      var def = catMap[name];
+      var cat = def ? def.cat : '&mdash;';
+      var catL = def ? def.catLabel : 'Unknown / 3rd party';
+      var isActive = def ? (active.indexOf(def.cat) !== -1) : true;
+      var statusBadge = isActive
+        ? '<span class="badge active" style="font-size:10px">allowed</span>'
+        : '<span class="badge blocked" style="font-size:10px">blocked</span>';
+      if(!def) statusBadge = '<span class="badge pending" style="font-size:10px">uncat.</span>';
+      html += '<tr>'
+        + '<td><b>' + name + '</b></td>'
+        + '<td><span class="badge label">' + cat + '</span></td>'
+        + '<td>' + catL + '</td>'
+        + '<td>' + statusBadge + '</td>'
+        + '<td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + val.substr(0,60) + '</td>'
+        + '</tr>';
+    });
+    body.innerHTML = html;
+    dlog('XDCD-COOKIE','Cookie table updated - ' + cookies.length + ' cookies');
+  }
+
+  /* ---- Fire log ---- */
+  window.updateFireLog = function(){
+    var log = window.__XDCD.fireLog;
+    var el = document.getElementById('fireLog');
+    if(!log.length){
+      el.innerHTML = '<li style="color:#9CA88E">No events yet &mdash; click <b>Fire Marketing Events</b></li>';
+      return;
+    }
+    var html = '';
+    log.forEach(function(e){
+      var dotCls = e.status === 'fired' ? 'green' : 'red';
+      var icon = e.status === 'fired' ? '&#9989;' : '&#128683;';
+      html += '<li><span class="dot ' + dotCls + '"></span>'
+        + '<span class="badge label" style="font-size:10px">' + e.cat + '</span> '
+        + icon + ' ' + e.name
+        + ' <span style="color:#9CA88E;font-size:10px;margin-left:auto">' + e.ts.substr(11,8) + '</span>'
+        + '</li>';
+    });
+    el.innerHTML = html;
+  };
+
+  /* ---- Init on DOM ready ---- */
+  window.addEventListener('DOMContentLoaded', function(){
+    dlog('XDCD-UI','DOM ready - initializing panels');
+    updateAllPanels();
+  });
+
+  /* listen for OT group changes */
+  window.addEventListener('OneTrustGroupsUpdated', function(){
+    dlog('XDCD-OT','OneTrustGroupsUpdated event received');
+    updateAllPanels();
+  });
+
+  /* auto-refresh every 3s */
+  setInterval(function(){ updateAllPanels(); }, 3000);
+})();
+</script>
+</body>
+</html>
